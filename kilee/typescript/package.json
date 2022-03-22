@@ -11,6 +11,7 @@
   "devDependencies": {
     "@craftdocs/craft-extension-api": "0.0.4",
     "@craftdocs/craft-extension-api-sdk": "0.0.4",
+    "@types/base-64": "^1.0.0",
     "copy-webpack-plugin": "^9.1.0",
     "css-loader": "^6.5.1",
     "html-webpack-plugin": "^5.5.0",
@@ -26,6 +27,7 @@
   },
   "dependencies": {
     "@octokit/core": "^3.6.0",
-    "@octokit/types": "^6.34.0"
+    "@octokit/types": "^6.34.0",
+    "base-64": "^1.0.0"
   }
 }

@@ -1,6 +1,7 @@
 import './style.css';
 import craftXIconSrc from './craftx-icon.png';
 import { Octokit } from '@octokit/core';
+import * as base64 from 'base-64';
 
 type OctokitResponseData = {
 	type: string;
@@ -32,23 +33,24 @@ window.addEventListener('load', () => {
 
 	button?.addEventListener('click', async () => {
 		const pageData = await craft.dataApi.getCurrentPage();
-		console.log(pageData);
+		console.log(pageData.data);
 
-		await gitUpload();
+		const encodedPageData = base64.encode(JSON.stringify(pageData.data));
+		await gitUpload(encodedPageData);
 	});
 	const logoImg = document.getElementById('craftx-logo') as HTMLImageElement;
 	logoImg.src = craftXIconSrc;
 });
 
-async function gitUpload() {
+async function gitUpload(encodedContent: string) {
 	const octokit = new Octokit({
-		auth: `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`,
+		auth: `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`,
 	});
 
 	const options = {
 		owner: 'Likilee',
 		repo: 'craftX_prac',
-		path: 'test',
+		path: 'test2',
 		sha: '',
 		message: '',
 		content: '',
@@ -59,13 +61,22 @@ async function gitUpload() {
 			'GET /repos/{owner}/{repo}/contents/{path}',
 			options
 		);
-		const { sha } = response.data as OctokitResponseData;
+		const { sha, content } = response.data as OctokitResponseData;
 		options.sha = sha;
+
+		const data = JSON.parse(content!);
 	} catch {
 		console.log('Not exist');
 	}
 
 	options.message = 'Commit message';
-	options.content = 'SGVsbG8gamFlc2VvISE=';
-	await octokit.request('PUT /repos/{owner}/{repo}/contents/{path}', options);
+	options.content = encodedContent;
+	return await octokit.request(
+		'PUT /repos/{owner}/{repo}/contents/{path}',
+		options
+	);
+}
+
+async function getPageData() {
+	return await craft.dataApi.getCurrentPage();
 }
