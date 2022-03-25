@@ -1,29 +1,18 @@
 on:
   workflow_dispatch:
     inputs:
-      logLevel:
-        description: 'Log level'
+      craftDocument:
+        description: 'ddfa'
         required: true
-        default: 'warning'
-        type: choice
-        options:
-          - info
-          - warning
-          - debug
-      tags:
-        description: 'Test scenario tags'
-        required: false
-        type: boolean
-
+        type: string
 jobs:
   log-the-inputs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          echo "Log level: $LEVEL"
-          echo "Tags: $TAGS"
-          echo "Environment: $ENVIRONMENT"
+          echo "Craft Document data: $CRAFT_DOCUMENT"
         env:
+          CRAFT_DOCUMENT: ${{ github.event.inputs.craftDocument }}
           LEVEL: ${{ github.event.inputs.logLevel }}
           TAGS: ${{ github.event.inputs.tags }}
           ENVIRONMENT: ${{ github.event.inputs.environment }}
