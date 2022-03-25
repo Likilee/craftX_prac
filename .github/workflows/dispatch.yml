@@ -2,11 +2,11 @@ on:
   workflow_dispatch:
     inputs:
       craftDocument:
-        description: 'ddfa'
+        description: 'Craft Document Data'
         required: true
         type: string
 jobs:
-  log-the-inputs:
+  print-craft-document-data:
     runs-on: ubuntu-latest
     steps:
       - run: |
