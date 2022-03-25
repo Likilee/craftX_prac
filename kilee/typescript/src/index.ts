@@ -2,6 +2,11 @@ import './style.css';
 import craftXIconSrc from './craftx-icon.png';
 import { Octokit } from '@octokit/core';
 import * as base64 from 'base-64';
+import {
+	ApiResponse,
+	CraftBlock,
+	CraftTextBlock,
+} from '@craftdocs/craft-extension-api';
 
 type OctokitResponseData = {
 	type: string;
@@ -32,20 +37,47 @@ window.addEventListener('load', () => {
 	const button = document.getElementById('btn-execute');
 
 	button?.addEventListener('click', async () => {
-		const pageData = await craft.dataApi.getCurrentPage();
-		console.log(pageData.data);
-
-		const encodedPageData = base64.encode(JSON.stringify(pageData.data));
-		await gitUpload(encodedPageData);
+		const pageData = await getPageData();
+		await gitUpload(pageData);
 	});
+
 	const logoImg = document.getElementById('craftx-logo') as HTMLImageElement;
 	logoImg.src = craftXIconSrc;
 });
 
-async function gitUpload(encodedContent: string) {
-	const octokit = new Octokit({
-		auth: `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`,
-	});
+async function gitUpload(page: ApiResponse<CraftTextBlock>) {
+	const pageData = JSON.stringify(page.data);
+	const encodedContent = base64.encode(pageData);
+
+	const octokit = await (async () => {
+		try {
+			const octokit = new Octokit({
+				auth: `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`,
+				request: {
+					fetch:
+						// @ts-ignore
+						process.env.NODE_ENV === 'development'
+							? fetch
+							: craft.httpProxy.fetch,
+				},
+			});
+
+			return octokit;
+		} catch (error) {
+			const code = craft.blockFactory.codeBlock({
+				code: JSON.stringify(error),
+			});
+
+			const loc = craft.location.indexLocation(page.data!.id, 0);
+
+			await craft.dataApi.addBlocks([code], loc);
+
+			window.document.body.innerHTML = `
+			<code>${JSON.stringify(error)}</code>
+			`;
+			throw new Error();
+		}
+	})();
 
 	const options = {
 		owner: 'Likilee',
@@ -56,6 +88,14 @@ async function gitUpload(encodedContent: string) {
 		content: '',
 	};
 
+	const code = craft.blockFactory.codeBlock({
+		code: JSON.stringify({ hello: 'world' }),
+	});
+
+	const loc = craft.location.indexLocation(page.data!.id, 0);
+
+	await craft.dataApi.addBlocks([code], loc);
+
 	try {
 		const response = await octokit.request(
 			'GET /repos/{owner}/{repo}/contents/{path}',
@@ -63,18 +103,27 @@ async function gitUpload(encodedContent: string) {
 		);
 		const { sha, content } = response.data as OctokitResponseData;
 		options.sha = sha;
+	} catch (error) {
+		const code = craft.blockFactory.codeBlock({
+			code: JSON.stringify(error),
+		});
 
-		const data = JSON.parse(content!);
-	} catch {
+		const loc = craft.location.indexLocation(page.data!.id, 0);
+
+		await craft.dataApi.addBlocks([code], loc);
+
+		window.document.body.innerHTML = `
+		<code>${JSON.stringify(error)}</code>
+		`;
 		console.log('Not exist');
 	}
 
 	options.message = 'Commit message';
 	options.content = encodedContent;
-	return await octokit.request(
-		'PUT /repos/{owner}/{repo}/contents/{path}',
-		options
-	);
+		return await octokit.request(
+			'PUT /repos/{owner}/{repo}/contents/{path}',
+			options
+		);
 }
 
 async function getPageData() {
